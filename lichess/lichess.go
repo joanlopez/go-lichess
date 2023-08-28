@@ -1,9 +1,11 @@
 package lichess
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/go-querystring/query"
 	"io"
@@ -78,7 +80,12 @@ func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body int
 		return nil, err
 	}
 
-	req.Header.Set("Accept", "application/json")
+	switch typeOfResponse(method, req.URL.Path) {
+	case jsonResponseType:
+		req.Header.Set("Accept", "application/json")
+	case ndJsonResponseType:
+		req.Header.Set("Accept", "application/x-ndjson")
+	}
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -133,12 +140,31 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 	case io.Writer:
 		_, err = io.Copy(v, resp.Body)
 	default:
-		decErr := json.NewDecoder(resp.Body).Decode(v)
-		if decErr == io.EOF {
-			decErr = nil // ignore EOF errors caused by empty response body
-		}
-		if decErr != nil {
-			err = decErr
+		switch typeOfResponse(req.Method, req.URL.Path) {
+		case jsonResponseType:
+			decErr := json.NewDecoder(resp.Body).Decode(v)
+			if decErr == io.EOF {
+				decErr = nil // ignore EOF errors caused by empty response body
+			}
+			if decErr != nil {
+				err = decErr
+			}
+		case ndJsonResponseType:
+			if reflect.ValueOf(v).Elem().Kind() != reflect.Slice {
+				err = errors.New("v is not a pointer to a slice")
+			}
+
+			itemType := reflect.ValueOf(v).Elem().Type().Elem()
+
+			scanner := bufio.NewScanner(resp.Body)
+			for scanner.Scan() {
+				item := reflect.New(itemType).Interface()
+				if err = json.Unmarshal(scanner.Bytes(), item); err != nil {
+					break
+				}
+
+				reflect.ValueOf(v).Elem().Set(reflect.Append(reflect.ValueOf(v).Elem(), reflect.ValueOf(item).Elem()))
+			}
 		}
 	}
 	return resp, err
@@ -182,4 +208,22 @@ func addOptions(s string, opts interface{}) (string, error) {
 
 	u.RawQuery = qs.Encode()
 	return u.String(), nil
+}
+
+type responseType uint8
+
+const (
+	jsonResponseType responseType = iota
+
+	ndJsonResponseType // An array of this length will be able to contain all rate limit categories.
+)
+
+// typeOfResponse returns the response type of the endpoint, determined by HTTP method and Request.URL.Path.
+func typeOfResponse(method, path string) responseType {
+	switch {
+	default:
+		return jsonResponseType
+	case strings.Contains(path, "/api/games/user/"):
+		return ndJsonResponseType
+	}
 }
