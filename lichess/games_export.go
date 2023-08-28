@@ -6,8 +6,9 @@ import (
 	"net/http"
 )
 
-// ExportByIdOptions specifies parameters for GamesService.ExportById method.
-type ExportByIdOptions struct {
+// ExportOptions specifies parameters for GamesService.ExportById
+// and GamesService.ExportByUsername methods.
+type ExportOptions struct {
 	Moves     *bool   `url:"moves,omitempty"`
 	PgnInJson *bool   `url:"pgnInJson,omitempty"`
 	Tags      *bool   `url:"tags,omitempty"`
@@ -19,8 +20,29 @@ type ExportByIdOptions struct {
 	Players   *string `url:"players,omitempty"`
 }
 
-func (s *GamesService) ExportById(ctx context.Context, id string, opts *ExportByIdOptions) (*Game, *Response, error) {
+func (s *GamesService) ExportById(ctx context.Context, id string, opts *ExportOptions) (*Game, *Response, error) {
 	u := fmt.Sprintf("game/export/%v", id)
+	u, err := addOptions(u, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var game *Game
+	resp, err := s.client.Do(req, &game)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return game, resp, nil
+}
+
+func (s *GamesService) ExportByUsername(ctx context.Context, username string, opts *ExportOptions) (*Game, *Response, error) {
+	u := fmt.Sprintf("api/user/%v/current-game", username)
 	u, err := addOptions(u, opts)
 	if err != nil {
 		return nil, nil, err
