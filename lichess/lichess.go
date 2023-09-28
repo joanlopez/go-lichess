@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/go-querystring/query"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/google/go-querystring/query"
 )
 
 const (
@@ -31,6 +32,26 @@ func NewClient(httpClient *http.Client) *Client {
 	c := &Client{client: httpClient, BaseURL: baseURL}
 	c.common.client = c
 	c.Games = (*GamesService)(&c.common)
+	c.Puzzles = (*PuzzlesService)(&c.common)
+
+	return c
+}
+
+// WithAuthToken returns a copy of the client configured to use the
+// provided token for the Authorization header.
+func (c *Client) WithAuthToken(token string) *Client {
+	transport := c.client.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
+	}
+
+	c.client.Transport = roundTripperFunc(
+		func(req *http.Request) (*http.Response, error) {
+			req = req.Clone(req.Context())
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			return transport.RoundTrip(req)
+		},
+	)
 
 	return c
 }
@@ -46,7 +67,8 @@ type Client struct {
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
 	// Services used for talking to different parts of the Lichess API.
-	Games *GamesService
+	Games   *GamesService
+	Puzzles *PuzzlesService
 }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
@@ -223,7 +245,15 @@ func typeOfResponse(method, path string) responseType {
 	switch {
 	default:
 		return jsonResponseType
-	case strings.Contains(path, "/api/games/user/"):
+	case strings.Contains(path, "/api/games/user/"),
+		strings.Contains(path, "api/puzzle/activity"):
 		return ndJsonResponseType
 	}
+}
+
+// roundTripperFunc creates a RoundTripper (transport)
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return fn(r)
 }

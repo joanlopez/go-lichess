@@ -57,3 +57,16 @@ NOTE: Using the [context](https://godoc.org/context) package, one can easily
 pass cancellation signals and deadlines to various services of the client for
 handling a request. In case there is no context available, then `context.Background()`
 can be used as a starting point.
+
+### Authentication ###
+
+Use the `WithAuthToken` method to configure your client to authenticate using an
+OAuth token (for example, a [Personal Access Token](https://lichess.org/api#section/Introduction/Authentication)).
+
+```go
+client := lichess.NewClient(nil).WithAuthToken("... your access token ...")
+```
+
+Note that when using an authenticated Client, all calls made by the client will
+include the specified OAuth token. Therefore, authenticated clients should
+almost never be shared between different users.
