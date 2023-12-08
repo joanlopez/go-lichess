@@ -125,4 +125,5 @@ type GameClock struct {
 	Initial   *int `json:"initial,omitempty"`
 	Increment *int `json:"increment,omitempty"`
 	TotalTime *int `json:"totalTime,omitempty"`
+	Limit     *int `json:"limit,omitempty"`
 }

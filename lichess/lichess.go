@@ -155,7 +155,18 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	defer resp.Body.Close()
+
+	// We only close the response body, when the
+	// caller expects it to parse the response body.
+	// In other words, when v is not nil.
+	// That's to also have support for streaming.
+	defer func() {
+		if v != nil {
+			// Explicit ignore error.
+			// We might want to revisit this later.
+			_ = resp.Body.Close()
+		}
+	}()
 
 	switch v := v.(type) {
 	case nil:
