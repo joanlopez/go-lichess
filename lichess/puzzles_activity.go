@@ -16,7 +16,10 @@ type GetPuzzleActivityOptions struct {
 	Before *int `url:"before,omitempty"` // >= 1356998400070
 }
 
-func (s *PuzzlesService) GetPuzzleActivity(ctx context.Context, opts *GetPuzzleActivityOptions) ([]*PuzzleRound, *Response, error) {
+func (s *PuzzlesService) GetPuzzleActivity(
+	ctx context.Context,
+	opts *GetPuzzleActivityOptions,
+) ([]*PuzzleRound, *Response, error) {
 	u := "api/puzzle/activity"
 	u, err := addOptions(u, opts)
 	if err != nil {

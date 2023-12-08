@@ -151,9 +151,9 @@ func (c *Client) BareDo(req *http.Request) (*Response, error) {
 // If rate limit is exceeded and reset time is in the future, Do returns
 // *RateLimitError immediately without making a network API call.
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
-	resp, err := c.BareDo(req)
+	res, err := c.BareDo(req)
 	if err != nil {
-		return resp, err
+		return res, err
 	}
 
 	// We only close the response body, when the
@@ -164,43 +164,56 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 		if v != nil {
 			// Explicit ignore error.
 			// We might want to revisit this later.
-			_ = resp.Body.Close()
+			_ = res.Body.Close()
 		}
 	}()
+
+	err = c.decodeResponse(req, res, v)
+
+	return res, err
+}
+
+func (c *Client) decodeResponse(req *http.Request, res *Response, v interface{}) error {
+	var err error
 
 	switch v := v.(type) {
 	case nil:
 	case io.Writer:
-		_, err = io.Copy(v, resp.Body)
+		_, err = io.Copy(v, res.Body)
 	default:
 		switch typeOfResponse(req.Method, req.URL.Path) {
 		case jsonResponseType:
-			decErr := json.NewDecoder(resp.Body).Decode(v)
-			if decErr == io.EOF {
-				decErr = nil // ignore EOF errors caused by empty response body
-			}
-			if decErr != nil {
+			decErr := json.NewDecoder(res.Body).Decode(v)
+			// Ignore EOF errors caused by empty response body
+			if decErr != nil && !errors.Is(decErr, io.EOF) {
 				err = decErr
 			}
 		case ndJsonResponseType:
-			if reflect.ValueOf(v).Elem().Kind() != reflect.Slice {
-				err = errors.New("v is not a pointer to a slice")
-			}
-
-			itemType := reflect.ValueOf(v).Elem().Type().Elem()
-
-			scanner := bufio.NewScanner(resp.Body)
-			for scanner.Scan() {
-				item := reflect.New(itemType).Interface()
-				if err = json.Unmarshal(scanner.Bytes(), item); err != nil {
-					break
-				}
-
-				reflect.ValueOf(v).Elem().Set(reflect.Append(reflect.ValueOf(v).Elem(), reflect.ValueOf(item).Elem()))
-			}
+			err = c.decodeNdJson(res, v)
 		}
 	}
-	return resp, err
+
+	return err
+}
+
+func (c *Client) decodeNdJson(res *Response, v interface{}) error {
+	if reflect.ValueOf(v).Elem().Kind() != reflect.Slice {
+		return errors.New("v is not a pointer to a slice")
+	}
+
+	itemType := reflect.ValueOf(v).Elem().Type().Elem()
+
+	scanner := bufio.NewScanner(res.Body)
+	for scanner.Scan() {
+		item := reflect.New(itemType).Interface()
+		if err := json.Unmarshal(scanner.Bytes(), item); err != nil {
+			return err
+		}
+
+		reflect.ValueOf(v).Elem().Set(reflect.Append(reflect.ValueOf(v).Elem(), reflect.ValueOf(item).Elem()))
+	}
+
+	return nil
 }
 
 type service struct {
@@ -252,7 +265,7 @@ const (
 )
 
 // typeOfResponse returns the response type of the endpoint, determined by HTTP method and Request.URL.Path.
-func typeOfResponse(method, path string) responseType {
+func typeOfResponse(_, path string) responseType {
 	switch {
 	default:
 		return jsonResponseType
@@ -262,7 +275,7 @@ func typeOfResponse(method, path string) responseType {
 	}
 }
 
-// roundTripperFunc creates a RoundTripper (transport)
+// roundTripperFunc creates a RoundTripper (transport).
 type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (fn roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {

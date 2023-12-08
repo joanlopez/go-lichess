@@ -1,0 +1,116 @@
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - bidichk
+#   - bodyclose -> streams?
+    - containedctx
+    - contextcheck
+    - cyclop
+    - decorder
+#   - depguard -> reports testify/require and go-querystring/query
+#   - dogsled -> why not?
+    - dupl
+    - dupword
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+#   - execinquery -> no sql
+#   - exhaustive -> why?
+#   - exhaustruct -> why?
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gci
+#   - ginkgolinter -> not used
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+#   - goerr113 -> annoying, revisit in the future
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - gosmopolitan
+    - govet
+    - grouper
+    - importas
+    - ineffassign
+    - interfacebloat
+#   - ireturn -> why not? sometimes (generic)
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+#   - nlreturn -> annoying
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - prealloc
+    - predeclared
+#   - promlinter -> no prom
+#   - protogetter -> no protos
+    - reassign
+    - revive
+#   - rowserrcheck -> no sql/rows
+    - sloglint
+#   - sqlclosecheck -> no sql
+    - staticcheck
+#   - stylecheck -> annoying (var-naming)
+    - tagalign
+    - tagliatelle
+    - tenv
+    - testableexamples
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+#   - varnamelen -> annoying
+    - wastedassign
+    - whitespace
+#   - wrapcheck -> why? always?
+#   - wsl -> annoying
+#   - zerologlint -> no zerolog
+
+linters-settings:
+  revive:
+    rules:
+      - name: var-naming
+        disabled: true
+
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/joanlopez/go-lichess)
+
+    # Make the section order the same as the order of `sections`.
+    custom-order: true

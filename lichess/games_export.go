@@ -63,7 +63,11 @@ func (s *GamesService) ExportById(ctx context.Context, id string, opts *ExportOp
 
 // ExportCurrent exports the current [Game] being played by the given username.
 // Find more details at https://lichess.org/api#tag/Games/operation/apiUserCurrentGame.
-func (s *GamesService) ExportCurrent(ctx context.Context, username string, opts *ExportOptions) (*Game, *Response, error) {
+func (s *GamesService) ExportCurrent(
+	ctx context.Context,
+	username string,
+	opts *ExportOptions,
+) (*Game, *Response, error) {
 	u := fmt.Sprintf("api/user/%v/current-game", username)
 	u, err := addOptions(u, opts)
 	if err != nil {
@@ -86,7 +90,11 @@ func (s *GamesService) ExportCurrent(ctx context.Context, username string, opts 
 
 // ExportByUsername exports a list of [Game] played by the given username.
 // Find more details at https://lichess.org/api#tag/Games/operation/apiGamesUser.
-func (s *GamesService) ExportByUsername(ctx context.Context, username string, opts *ExportByUsernameOptions) ([]*Game, *Response, error) {
+func (s *GamesService) ExportByUsername(
+	ctx context.Context,
+	username string,
+	opts *ExportByUsernameOptions,
+) ([]*Game, *Response, error) {
 	u := fmt.Sprintf("api/games/user/%v", username)
 	u, err := addOptions(u, opts)
 	if err != nil {

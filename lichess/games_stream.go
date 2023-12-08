@@ -93,41 +93,41 @@ func (s *GamesService) StreamGameMoves(ctx context.Context, id string) (chan Gam
 
 	ch := make(chan GameStreamEvent)
 
-	finalize := func() {
+	go s.streamGameMoves(ctx, ch, resp)
+
+	return ch, resp, nil
+}
+
+func (s *GamesService) streamGameMoves(ctx context.Context, ch chan GameStreamEvent, resp *Response) {
+	defer func() {
 		// Explicit ignore error.
 		// We might want to revisit this later.
 		_ = resp.Body.Close()
 		close(ch)
-	}
-
-	go func() {
-		scanner := bufio.NewScanner(resp.Body)
-		for scanner.Scan() {
-			select {
-			case <-ctx.Done():
-				finalize()
-				return
-			default:
-			}
-
-			select {
-			case <-ctx.Done():
-				finalize()
-				return
-			case ch <- s.parseGameStreamEvent(scanner.Text()):
-			}
-		}
-
-		if scanner.Err() != nil {
-			select {
-			case <-ctx.Done():
-			case ch <- GameStreamEventError{error: scanner.Err()}:
-			}
-		}
-		finalize()
 	}()
 
-	return ch, resp, nil
+	scanner := bufio.NewScanner(resp.Body)
+
+	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case ch <- s.parseGameStreamEvent(scanner.Text()):
+		}
+	}
+
+	if scanner.Err() != nil {
+		select {
+		case <-ctx.Done():
+		case ch <- GameStreamEventError{error: scanner.Err()}:
+		}
+	}
 }
 
 func (s *GamesService) parseGameStreamEvent(event string) GameStreamEvent {
