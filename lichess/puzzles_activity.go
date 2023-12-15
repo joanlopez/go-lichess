@@ -26,7 +26,7 @@ func (s *PuzzlesService) GetPuzzleActivity(
 		return nil, nil, err
 	}
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, u, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, nil, err
 	}

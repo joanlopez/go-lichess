@@ -47,7 +47,7 @@ func (s *GamesService) ExportById(ctx context.Context, id string, opts *ExportOp
 		return nil, nil, err
 	}
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, u, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -74,7 +74,7 @@ func (s *GamesService) ExportCurrent(
 		return nil, nil, err
 	}
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, u, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -101,7 +101,7 @@ func (s *GamesService) ExportByUsername(
 		return nil, nil, err
 	}
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, u, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, nil, err
 	}

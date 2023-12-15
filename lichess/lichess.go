@@ -2,7 +2,6 @@ package lichess
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -73,10 +72,39 @@ type Client struct {
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the Client.
+// Relative URLs should always be specified without a preceding slash.
+func (c *Client) NewRequest(ctx context.Context, method, urlStr string) (*http.Request, error) {
+	return c.newRequest(ctx, method, urlStr, nil)
+}
+
+// RequestBody is a data structure that holds the request body as well as
+// the type of the content, which will be used to set the Content-Type header.
+type RequestBody struct {
+	Bytes io.Reader
+	Type  string
+}
+
+// NewRequestWithBody creates an API request. A relative URL can be provided in urlStr,
+// in which case it is resolved relative to the BaseURL of the Client.
 // Relative URLs should always be specified without a preceding slash. If
 // specified, the value pointed to by body is JSON encoded and included as the
 // request body.
-func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body interface{}) (*http.Request, error) {
+func (c *Client) NewRequestWithBody(
+	ctx context.Context,
+	method, urlStr string,
+	body RequestBody,
+) (*http.Request, error) {
+	req, err := c.newRequest(ctx, method, urlStr, body.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", body.Type)
+
+	return req, nil
+}
+
+func (c *Client) newRequest(ctx context.Context, method, urlStr string, body io.Reader) (*http.Request, error) {
 	if !strings.HasSuffix(c.BaseURL.Path, "/") {
 		return nil, fmt.Errorf("BaseURL must have a trailing slash, but %q does not", c.BaseURL)
 	}
@@ -86,18 +114,7 @@ func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body int
 		return nil, err
 	}
 
-	var buf io.ReadWriter
-	if body != nil {
-		buf = &bytes.Buffer{}
-		enc := json.NewEncoder(buf)
-		enc.SetEscapeHTML(false)
-		err := enc.Encode(body)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	req, err := http.NewRequestWithContext(ctx, method, u.String(), buf)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -107,10 +124,6 @@ func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body int
 		req.Header.Set("Accept", "application/json")
 	case ndJsonResponseType:
 		req.Header.Set("Accept", "application/x-ndjson")
-	}
-
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
 	}
 
 	return req, nil
@@ -269,7 +282,8 @@ func typeOfResponse(_, path string) responseType {
 	switch {
 	default:
 		return jsonResponseType
-	case strings.Contains(path, "/api/games/user/"),
+	case strings.Contains(path, "api/games/user/"),
+		strings.Contains(path, "api/stream/games-by-users"),
 		strings.Contains(path, "api/puzzle/activity"):
 		return ndJsonResponseType
 	}
