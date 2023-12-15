@@ -4,6 +4,10 @@
 
 go-lichess is a Go client library for accessing the [Lichess.org API (2.0.0)](https://lichess.org/api).
 
+> [!WARNING]
+> This library is still under active development, so please be careful if you're considering it for production use.
+> Certain aspects like error handling and request/response lifecycle management are still in progress.
+
 ## Installation ##
 
 go-lichess is compatible with modern Go releases in module mode, with Go installed:
