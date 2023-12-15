@@ -31,6 +31,31 @@ Finally, to use the top-of-trunk version of this repo, use the following command
 ```bash
 go get github.com/joanlopez/go-lichess@main
 ```
+## Support ##
+
+<details>
+<summary>GamesService (client.Games)</summary>
+
+```go
+client.Games.ExportById()
+client.Games.ExportCurrent()
+client.Games.ExportByUsername()
+
+client.Games.StreamGameMoves()
+client.Games.StreamUserGames()
+client.Games.StreamGamesOfUsers()
+```
+</details>
+
+<details>
+<summary>PuzzlesService (client.Puzzles)</summary>
+
+```go
+client.Puzzles.GetPuzzleActivity()
+```
+</details>
+
+*Do you miss support for any method/service? Contributions are welcome!* 
 
 ## Usage ##
 
