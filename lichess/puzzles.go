@@ -15,10 +15,11 @@ type PuzzleRound struct {
 
 // Puzzle represents a Lichess puzzle.
 type Puzzle struct {
-	Id       string   `json:"id,omitempty"`
-	Fen      string   `json:"fen,omitempty"`
-	Plays    int      `json:"plays,omitempty"`
-	Rating   int      `json:"rating,omitempty"`
-	Solution []string `json:"solution,omitempty"`
-	Themes   []string `json:"themes,omitempty"`
+	Id         string   `json:"id,omitempty"`
+	InitialPly int      `json:"initialPly,omitempty"`
+	Fen        string   `json:"fen,omitempty"`
+	Plays      int      `json:"plays,omitempty"`
+	Rating     int      `json:"rating,omitempty"`
+	Solution   []string `json:"solution,omitempty"`
+	Themes     []string `json:"themes,omitempty"`
 }
